@@ -83,12 +83,27 @@
       button{padding:8px 12px;font-size:.85rem}
       #map{height:300px}
     }
+      /* ---------- WRAPPERS ---------- */
+    .chart-wrapper, .table-wrapper{width:100%;overflow-x:auto}
+
+    /* ---------- RESPONSIVE EXTRA ---------- */
+    @media(max-width:768px){
+      h1{font-size:1.8rem}
+      #home h2{font-size:1.6rem}
+      .container{padding:20px}
+      #map{height:350px}
+      nav{flex-wrap:wrap;gap:10px}
+      nav a{font-size:.9rem}
+      #themeToggle{margin-top:6px}
+      canvas{max-width:100%!important}
+      table.dataTable{font-size:.8rem;white-space:nowrap}
+    }
   </style>
 </head>
 <body>
   <header>
     <h1 style="margin:0;font-size:2.5rem">Somali Region Health ERP</h1>
-    <p style="margin-top:10px;font-size:1.2rem">Track and visualize measles campaign supplies easily</p>
+    <p style="margin-top:10px;font-size:1.2rem">Track and visualize Measles SIA Vaccines and Related Supply Breakdown easily</p>
   </header>
   <nav>
     <a href="#home">Home</a>
@@ -111,7 +126,7 @@
       <input type="file" id="importExcel" accept=".xlsx" />
     </section>
 
-    <canvas id="supplyChart"></canvas>
+    <div class="chart-wrapper"><canvas id="supplyChart"></canvas></div>
 
     <div style="text-align:center;margin-top:20px">
       <label for="mapSupply">Map supply type:</label>
@@ -125,7 +140,7 @@
 
     <div id="map"></div>
 
-    <div style="margin-top:40px"><table id="dataTable" class="display nowrap dt-responsive" style="width:100%"></table></div>
+    <div class="table-wrapper" style="margin-top:40px"><table id="dataTable" class="display nowrap dt-responsive" style="width:100%"></table></div>
   </div>
 
 <!-- Inline Somali Woredas GeoJSON (replace ... with full feature collection) -->
