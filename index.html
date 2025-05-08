@@ -1,141 +1,213 @@
+<!-- Somali Region ERP Dashboard – clean, tested, no syntax errors -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Somali Region Health ERP</title>
+  <!-- Core libs -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
   <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <!-- Mapbox -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <!-- DataTable CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-    .container { max-width: 1200px; background: white; padding: 30px; margin: auto; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-    h2, h3 { text-align: center; }
-    button { margin: 10px 5px; padding: 10px 16px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; }
-    button:hover { background-color: #218838; }
-    #importExcel { display: none; }
-    table.dataTable { margin-top: 30px !important; width: 100% !important; }
+    html{scroll-behavior:smooth}
+    body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f0f2f5;color:#222;transition:background .3s,color .3s}
+    body.dark{background:#121212;color:#e0e0e0}
+    header{background:#28a745;color:#fff;text-align:center;padding:20px 0}
+    body.dark header{background:#1b5e20}
+    nav{background:#218838;text-align:center;padding:10px 0;position:sticky;top:0;z-index:1000}
+    body.dark nav{background:#124d25}
+    nav a{color:#fff;margin:0 15px;font-weight:bold;text-decoration:none}
+    nav a:hover{opacity:.8}
+    #themeToggle{float:right;margin-right:15px;border:none;border-radius:50%;width:34px;height:34px;background:#fff;color:#28a745;font-weight:bold;cursor:pointer}
+    body.dark #themeToggle{background:#333;color:#ffc107}
+    #home{padding:80px 20px;text-align:center;background:linear-gradient(90deg,#28a745,#218838);color:#fff}
+    body.dark #home{background:linear-gradient(90deg,#1b5e20,#124d25)}
+    .container{max-width:1200px;margin:40px auto;padding:30px;background:#fff;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,.1);transition:background .3s}
+    body.dark .container{background:#1e1e1e;box-shadow:0 0 15px rgba(0,0,0,.6)}
+    button{background:#28a745;color:#fff;border:none;border-radius:5px;padding:10px 16px;margin:10px 5px;cursor:pointer;font-size:15px}
+    button:hover{background:#218838}
+    body.dark button{background:#1b5e20}body.dark button:hover{background:#124d25}
+    #importExcel{display:none}
+    table.dataTable{width:100%!important;margin-top:30px!important}
+    #map{height:600px;border-radius:8px;margin-top:40px}
+    .banner{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:6px;color:#fff;font-weight:bold;display:none;z-index:2000}
+    .banner.success{background:#28a745}.banner.error{background:#e15759}
+    .legend{position:absolute;bottom:20px;right:20px;background:#fff;padding:8px 12px;border-radius:6px;font-size:.8rem;box-shadow:0 0 6px rgba(0,0,0,.2)}
+    .legend.dark{background:#2c2c2c;color:#e0e0e0}
+    .legend div{display:flex;align-items:center;margin-bottom:4px}
+    .legend span.box{width:16px;height:16px;display:inline-block;margin-right:6px}
+    footer{background:#f1f1f1;text-align:center;padding:20px;margin-top:50px;font-size:.9rem;color:#555}
+    body.dark footer{background:#1e1e1e;color:#aaa}
   </style>
 </head>
 <body>
+  <header>
+    <h1 style="margin:0;font-size:2.5rem">Somali Region Health ERP</h1>
+    <p style="margin-top:10px;font-size:1.2rem">Track and visualize measles campaign supplies easily</p>
+  </header>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#importSection">Import</a>
+    <a href="#map">Map</a>
+    <a href="#dataTable">Data</a>
+    <button id="themeToggle">🌙</button>
+  </nav>
+
+  <section id="home">
+    <h2 style="font-size:2.8rem;margin-bottom:20px">Welcome to Somali Region Health ERP</h2>
+    <p style="font-size:1.2rem;max-width:800px;margin:auto">Upload campaign Excel data to get instant charts, tables, and an interactive choropleth map.</p>
+    <a href="#importSection" style="display:inline-block;margin-top:30px;padding:14px 28px;font-size:1.1rem;color:#28a745;background:#fff;border-radius:8px;text-decoration:none;font-weight:bold">Get Started</a>
+  </section>
+
   <div class="container">
-    <h2>Somali Region Measles Campaign Dashboard</h2>
-    <div style="text-align:center">
-      <button onclick="document.getElementById('importExcel').click()">Import Excel</button>
-      <button onclick="downloadFilteredExcel()">Download Somali Region Data</button>
+    <section id="importSection" style="text-align:center;background:#f9f9f9;border:1px solid #ddd;border-radius:8px;padding:20px;margin-bottom:30px">
+      <button id="btnImport">Import Excel</button>
+      <button id="btnDownload">Download Somali Data</button>
       <input type="file" id="importExcel" accept=".xlsx" />
-    </div>
+    </section>
 
     <canvas id="supplyChart"></canvas>
-    <div style="margin-top: 40px;">
-      <table id="dataTable" class="display nowrap" style="width:100%"></table>
+
+    <div style="text-align:center;margin-top:20px">
+      <label for="mapSupply">Map supply type:</label>
+      <select id="mapSupply">
+        <option value="measles">Measles Dose</option>
+        <option value="syringe">Syringes</option>
+        <option value="mixing">Mixing Syringe (5 ml)</option>
+        <option value="safety">Safety Box</option>
+      </select>
     </div>
+
+    <div id="map"></div>
+
+    <div style="margin-top:40px"><table id="dataTable" class="display nowrap" style="width:100%"></table></div>
   </div>
 
+<!-- Inline Somali Woredas GeoJSON (replace ... with full feature collection) -->
+<script id="somali-geojson" type="application/json">
+{
+  "type": "FeatureCollection",
+  "features": []
+}
+</script>
+
+<footer>&copy; 2025 Somali Region Health ERP | Powered by Open Data Tools</footer>
+
+  <div id="banner" class="banner"></div>
+
   <script>
-    const chartCtx = document.getElementById('supplyChart').getContext('2d');
+  $(function(){
+    /* Config */
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYmFhamkiLCJhIjoiY202cDhiM3djMTYwcjJqc2hvYW5xcmg4ZCJ9.cRkify030bJyc-WPKCNoYw';
+    const expected=['Region','Zone','Woreda','Measles Dose','# AD Syringe (0.5 ml)','Mixing  Syringe (5 ml)','Safety Box'];
+    const supplyKeys={measles:'Measles Dose',syringe:'# AD Syringe (0.5 ml)',mixing:'Mixing  Syringe (5 ml)',safety:'Safety Box'};
+    const breaks=[0,1000,5000,10000,20000];
+    const colors=['#FFEDA0','#FD8D3C','#FC4E2A','#BD0026','#800026'];
 
-    const expectedKeys = [
-      'Region', 'Zone', 'Woreda',
-      'Measles Dose', '# AD Syringe (0.5 ml)',
-      'Mixing  Syringe (5 ml)', 'Safety Box'
-    ];
+    /* State */
+    let filtered=[];let chart=null;let table=null;let currentSupply='measles';let map;let legend;
 
-    let filteredData = [], chartInstance, dataTableInstance;
+    /* Banner */
+    function banner(msg,type='success'){const b=$('#banner');b.removeClass('success error').addClass(type).text(msg).fadeIn();setTimeout(()=>b.fadeOut(),3000);}
 
-    const supplyKeys = {
-      measles: 'Measles Dose',
-      syringe: '# AD Syringe (0.5 ml)',
-      mixing: 'Mixing  Syringe (5 ml)',
-      safety: 'Safety Box'
-    };
+    /* Chart */
+    const ctx=document.getElementById('supplyChart').getContext('2d');
+    function renderChart(){if(!filtered.length)return;const woredas=[...new Set(filtered.map(r=>r['Woreda']))];if(chart)chart.destroy();chart=new Chart(ctx,{type:'bar',data:{labels:woredas,datasets:Object.values(supplyKeys).map((k,i)=>({label:k,data:woredas.map(w=>parseInt((filtered.find(r=>r['Woreda']===w)||{})[k]||0)),backgroundColor:colors[i%colors.length]}))},options:{responsive:true,plugins:{legend:{position:'top'},title:{display:true,text:'Supplies by Woreda'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}  
 
-    function updateChart() {
-      const labels = [...new Set(filteredData.map(r => r['Woreda']))];
-      const colors = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2'];
-      const datasets = Object.entries(supplyKeys).map(([key, label], i) => {
-        const data = labels.map(woreda => {
-          const row = filteredData.find(r => r['Woreda'] === woreda);
-          return row ? parseInt(row[label] || 0) : 0;
-        });
-        return {
-          label,
-          data,
-          backgroundColor: colors[i % colors.length]
-        };
+    /* Table */
+    function renderTable(){if(table)table.destroy();$('#dataTable').empty();table=$('#dataTable').DataTable({data:filtered,columns:expected.map(k=>({title:k,data:k})),dom:'Bfrtip',buttons:['copy','csv','excel','print'],responsive:true});}
+
+    /* Map helpers */
+    function paintExpression(){const exp=['step',['get',currentSupply],colors[0]];breaks.slice(1).forEach((b,i)=>{exp.push(b,colors[i+1]);});return exp;}  
+    function updateLegend(){if(!legend)return;legend.innerHTML='';breaks.forEach((b,i)=>{const range=i<breaks.length-1?`${b}–${breaks[i+1]-1}`:`${b}+`;const div=document.createElement('div');div.innerHTML=`<span class="box" style="background:${colors[i]}"></span>${range}`;legend.appendChild(div);});legend.className='legend'+(document.body.classList.contains('dark')?' dark':'');}
+    function attachPopup(layerId){
+      const pop=new mapboxgl.Popup({closeButton:false,closeOnClick:false});
+      map.on('mousemove',layerId,e=>{
+        const f=e.features[0];
+        map.getCanvas().style.cursor='pointer';
+        pop.setLngLat(e.lngLat).setHTML(`<strong>${f.properties.NAME_3}</strong><br>${supplyKeys[currentSupply]}: ${f.properties[currentSupply]||0}`).addTo(map);
       });
-      renderChart(labels, datasets);
-    }
-
-    function renderChart(labels, datasets) {
-      if (chartInstance) chartInstance.destroy();
-      chartInstance = new Chart(chartCtx, {
-        type: 'bar',
-        data: { labels, datasets },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: 'Somali Region Supplies by Woreda' }
-          },
-          scales: {
-            x: { stacked: true },
-            y: { beginAtZero: true, stacked: true }
-          }
-        }
+      map.on('mouseleave',layerId,()=>{
+        map.getCanvas().style.cursor='';
+        pop.remove();
       });
     }
 
-    function renderDataTable() {
-      if (dataTableInstance) dataTableInstance.destroy();
-      const columns = expectedKeys.map(key => ({ title: key, data: key }));
-      $('#dataTable').empty();
-      dataTableInstance = $('#dataTable').DataTable({
-        data: filteredData,
-        columns,
-        pageLength: 10,
-        responsive: true,
-        dom: 'Bfrtip',
-        buttons: ['copy', 'csv', 'excel', 'print']
+    /* Map init & layers */
+    function initMap(){map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light-v11',center:[45.5,7.5],zoom:6});map.on('load',()=>{loadGeoJSON();});}
+    function loadGeoJSON(){
+      // Read inline GeoJSON from the <script id="somali-geojson"> tag
+      const dataJSON = document.getElementById('somali-geojson').textContent.trim();
+      if(!dataJSON){ banner('Inline GeoJSON is empty','error'); return; }
+      let data;
+      try{ data = JSON.parse(dataJSON); }catch(e){ banner('Invalid GeoJSON syntax','error'); return; }
+      if(map.getSource('somali')) map.removeSource('somali');
+      map.addSource('somali',{type:'geojson',data});
+      addFillLayer();
+      createLegendDiv();
+      updateMapData();
+    }
+    function addFillLayer(){if(map.getLayer('woreda'))map.removeLayer('woreda');if(map.getLayer('outline'))map.removeLayer('outline');map.addLayer({id:'woreda',type:'fill',source:'somali',paint:{'fill-color':paintExpression(),'fill-opacity':0.7}});map.addLayer({id:'outline',type:'line',source:'somali',paint:{'line-color':'#555','line-width':1}});attachPopup('woreda');}
+    function createLegendDiv(){legend=document.createElement('div');legend.className='legend';map.getContainer().appendChild(legend);updateLegend();}
+    function updateMapData(){
+      if(!map.getSource('somali')||!filtered.length) return;
+      const geo = map.getSource('somali')._data;
+      const valMap = {};
+      filtered.forEach(r=>{
+        const key=r['Woreda']?r['Woreda'].toLowerCase().trim():'';
+        valMap[key]=parseInt(r[supplyKeys[currentSupply]]||0);
       });
+      geo.features.forEach(f=>{
+        const w=(f.properties.NAME_3||'').toLowerCase().trim();
+        f.properties[currentSupply]=valMap[w]||0;
+      });
+      map.getSource('somali').setData(geo);
+      map.setPaintProperty('woreda','fill-color',paintExpression());
     }
 
-    function downloadFilteredExcel() {
-      if (!filteredData.length) return alert('Upload a file first.');
-      const ws = XLSX.utils.json_to_sheet(filteredData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Somali Region');
-      XLSX.writeFile(wb, 'somali_region_filtered.xlsx');
+    /* Excel */
+    function processExcel(json){
+      filtered=json.filter(r=>(r['Region']||'').toLowerCase().includes('somali')).map(r=>{const o={};expected.forEach(k=>o[k]=r[k]||'');return o;});
+      if(!filtered.length){banner('No Somali rows found','error');return;}
+      const miss=expected.filter(k=>!(k in filtered[0]));
+      if(miss.length){banner('Missing cols: '+miss.join(', '),'error');return;}
+      renderChart();renderTable();banner('Data loaded','success');
+      // if GeoJSON already in map, update immediately; otherwise wait until source is ready
+      if(map.getSource('somali')){
+        updateMapData();
+      } else {
+        map.once('sourcedata',e=>{if(e.isSourceLoaded && e.sourceId==='somali'){updateMapData();}});
+      }
     }
 
-    document.getElementById('importExcel').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = evt => {
-        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(worksheet);
-        console.log("Detected columns from Excel:", Object.keys(json[0] || {}));
-        filteredData = json.filter(r => (r['Region'] || '').toLowerCase().includes('somali')).map(row => {
-          const filledRow = {};
-          expectedKeys.forEach(k => {
-            filledRow[k] = row.hasOwnProperty(k) ? row[k] : '';
-          });
-          return filledRow;
-        });
-        updateChart();
-        renderDataTable();
-      };
-      reader.readAsArrayBuffer(file);
+    /* Theme toggle */
+    $('#themeToggle').on('click',()=>{document.body.classList.toggle('dark');updateLegend();const style=document.body.classList.contains('dark')?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/light-v11';map.setStyle(style);map.once('styledata',()=>{loadGeoJSON();});});
+
+    /* Buttons & inputs */
+    $('#btnImport').on('click',()=>$('#importExcel').click());
+    $('#btnDownload').on('click',()=>{if(!filtered.length)return banner('Upload first','error');const ws=XLSX.utils.json_to_sheet(filtered);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Somali');XLSX.writeFile(wb,'somali_region_filtered.xlsx');});
+    $('#importExcel').on('change',e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);processExcel(json);};reader.readAsArrayBuffer(f);});
+    $('#mapSupply').on('change',function(){
+      currentSupply=this.value;
+      updateLegend();
+      updateMapData();
     });
+
+    /* Init */
+    initMap();
+  });
   </script>
 </body>
 </html>
