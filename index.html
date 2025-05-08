@@ -116,6 +116,12 @@
       canvas{max-width:100%!important}
       table.dataTable{font-size:.8rem;white-space:nowrap}
     }
+
+    /* ---------- DATATABLE HEADER COLOR ---------- */
+    #dataTable thead th {
+      background: #0074d9 !important;
+      color: #fff !important;
+    }
   </style>
 </head>
 <body>
@@ -341,6 +347,7 @@
         validWoredas = [...new Set(geo.features.map(f => f.properties.NAME_3))];
       }
 
+      // Only include actual data rows in filtered
       filtered = json.filter(r=>(r['Region']||'').toLowerCase().includes('somali')).map(r=>{
         const o={};
         expected.forEach(k=>{
@@ -400,7 +407,26 @@
 
     /* Buttons & inputs */
     $('#btnImport').on('click',()=>$('#importExcel').click());
-    $('#btnDownload').on('click',()=>{if(!filtered.length)return banner('Upload first','error');const ws=XLSX.utils.json_to_sheet(filtered);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Somali');XLSX.writeFile(wb,'somali_region_filtered.xlsx');});
+    $('#btnDownload').on('click',()=>{
+      if(!filtered.length)return banner('Upload first','error');
+      // Add a styled header row
+      const header = Object.keys(filtered[0] || {});
+      const data = [header].concat(filtered.map(row => header.map(h => row[h])));
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      // Style the header row (first row)
+      header.forEach((h, i) => {
+        const cell = ws[XLSX.utils.encode_cell({c:i, r:0})];
+        if(cell) {
+          cell.s = {
+            fill: { patternType: 'solid', fgColor: { rgb: '0074D9' } },
+            font: { color: { rgb: 'FFFFFF' }, bold: true }
+          };
+        }
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Somali');
+      XLSX.writeFile(wb, 'somali_region_filtered.xlsx');
+    });
     $('#importExcel').on('change',e=>{
       const f=e.target.files[0];
       if(!f) return;
