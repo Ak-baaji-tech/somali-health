@@ -22,34 +22,64 @@
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
   <style>
     html{scroll-behavior:smooth}
+    :root{--green:#28a745;--green-dark:#218838}
     body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f0f2f5;color:#222;transition:background .3s,color .3s}
     body.dark{background:#121212;color:#e0e0e0}
-    header{background:#28a745;color:#fff;text-align:center;padding:20px 0}
+
+    /* ---------- HEADER & NAV ---------- */
+    header{background:var(--green);color:#fff;text-align:center;padding:20px 10px}
     body.dark header{background:#1b5e20}
-    nav{background:#218838;text-align:center;padding:10px 0;position:sticky;top:0;z-index:1000}
+    nav{background:var(--green-dark);display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 0;position:sticky;top:0;z-index:1000}
     body.dark nav{background:#124d25}
-    nav a{color:#fff;margin:0 15px;font-weight:bold;text-decoration:none}
-    nav a:hover{opacity:.8}
-    #themeToggle{float:right;margin-right:15px;border:none;border-radius:50%;width:34px;height:34px;background:#fff;color:#28a745;font-weight:bold;cursor:pointer}
+    nav a{color:#fff;font-weight:bold;text-decoration:none;white-space:nowrap}
+    nav a:hover{opacity:.85}
+    #themeToggle{margin-left:auto;margin-right:15px;border:none;border-radius:50%;width:34px;height:34px;background:#fff;color:var(--green);font-weight:bold;cursor:pointer}
     body.dark #themeToggle{background:#333;color:#ffc107}
-    #home{padding:80px 20px;text-align:center;background:linear-gradient(90deg,#28a745,#218838);color:#fff}
+
+    /* ---------- HERO ---------- */
+    #home{padding:80px 20px;text-align:center;background:linear-gradient(90deg,var(--green),var(--green-dark));color:#fff}
     body.dark #home{background:linear-gradient(90deg,#1b5e20,#124d25)}
-    .container{max-width:1200px;margin:40px auto;padding:30px;background:#fff;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,.1);transition:background .3s}
+
+    /* ---------- CONTAINER ---------- */
+    .container{max-width:1200px;width:90%;margin:40px auto;padding:30px;background:#fff;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,.1);transition:background .3s}
     body.dark .container{background:#1e1e1e;box-shadow:0 0 15px rgba(0,0,0,.6)}
-    button{background:#28a745;color:#fff;border:none;border-radius:5px;padding:10px 16px;margin:10px 5px;cursor:pointer;font-size:15px}
-    button:hover{background:#218838}
+
+    /* ---------- BUTTONS ---------- */
+    button{background:var(--green);color:#fff;border:none;border-radius:5px;padding:10px 16px;margin:10px 5px;cursor:pointer;font-size:15px}
+    button:hover{background:var(--green-dark)}
     body.dark button{background:#1b5e20}body.dark button:hover{background:#124d25}
     #importExcel{display:none}
-    table.dataTable{width:100%!important;margin-top:30px!important}
-    #map{height:600px;border-radius:8px;margin-top:40px}
+
+    /* ---------- TABLE & MAP ---------- */
+    table.dataTable{width:100%!important;margin-top:30px!important;font-size:.9rem}
+    #map{width:100%;height:500px;border-radius:8px;margin-top:40px}
     .banner{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:6px;color:#fff;font-weight:bold;display:none;z-index:2000}
-    .banner.success{background:#28a745}.banner.error{background:#e15759}
+    .banner.success{background:var(--green)}.banner.error{background:#e15759}
     .legend{position:absolute;bottom:20px;right:20px;background:#fff;padding:8px 12px;border-radius:6px;font-size:.8rem;box-shadow:0 0 6px rgba(0,0,0,.2)}
     .legend.dark{background:#2c2c2c;color:#e0e0e0}
     .legend div{display:flex;align-items:center;margin-bottom:4px}
     .legend span.box{width:16px;height:16px;display:inline-block;margin-right:6px}
+
+    /* ---------- FOOTER ---------- */
     footer{background:#f1f1f1;text-align:center;padding:20px;margin-top:50px;font-size:.9rem;color:#555}
     body.dark footer{background:#1e1e1e;color:#aaa}
+
+    /* ---------- RESPONSIVE ---------- */
+    @media(max-width:768px){
+      h1{font-size:1.8rem}
+      #home h2{font-size:1.6rem}
+      .container{padding:20px}
+      #map{height:350px}
+      nav{flex-wrap:wrap;gap:10px}
+      nav a{font-size:.9rem}
+      #themeToggle{margin-top:6px}
+      canvas{max-width:100%!important}
+      table.dataTable{font-size:.8rem}
+    }
+    @media(max-width:480px){
+      button{padding:8px 12px;font-size:.85rem}
+      #map{height:300px}
+    }
   </style>
 </head>
 <body>
@@ -66,7 +96,7 @@
   </nav>
 
   <section id="home">
-    <h2 style="font-size:2.8rem;margin-bottom:20px">Welcomeh</h2>
+    <h2 style="font-size:2.8rem;margin-bottom:20px">Welcome</h2>
     <p style="font-size:1.2rem;max-width:800px;margin:auto">Upload campaign Excel data to get instant charts, tables, and an interactive choropleth map.</p>
     <a href="#importSection" style="display:inline-block;margin-top:30px;padding:14px 28px;font-size:1.1rem;color:#28a745;background:#fff;border-radius:8px;text-decoration:none;font-weight:bold">Get Started</a>
   </section>
@@ -103,7 +133,7 @@
 }
 </script>
 
-<footer>&copy; 2025 Somali Region Health ERP | Powered by BaajiTech Software Solutions</footer>
+<footer>&copy; 2025 Somali Region Health ERP | Powered by <a herf "https://Baajitech.net"> BaajiTech Software Solutions </a> </footer>
 
   <div id="banner" class="banner"></div>
 
