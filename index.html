@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Somali Region Health ERP</title>
+  <link rel="icon" type="image/x-icon" href="https://baajitech.net/favicon.ico">
   <!-- Core libs -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -31,11 +32,28 @@
     /* ---------- HEADER & NAV ---------- */
     header{background:var(--green);color:#fff;text-align:center;padding:20px 10px}
     body.dark header{background:#1b5e20}
-    nav{background:var(--green-dark);display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 0;position:sticky;top:0;z-index:1000}
+    nav{background:var(--green-dark);display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 0;position:sticky;top:0;z-index:1000;position:relative}
     body.dark nav{background:#124d25}
     nav a{color:#fff;font-weight:bold;text-decoration:none;white-space:nowrap}
     nav a:hover{opacity:.85}
-    #themeToggle{margin-left:auto;margin-right:15px;border:none;border-radius:50%;width:34px;height:34px;background:#fff;color:var(--green);font-weight:bold;cursor:pointer}
+    #themeToggle{
+      margin-left:20px;
+      border:none;
+      border-radius:50%;
+      width:36px;
+      height:36px;
+      background:var(--green-dark);
+      color:#fff;
+      font-weight:bold;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.2rem;
+      box-shadow:0 2px 6px rgba(0,0,0,0.07);
+      transition:background .2s;
+    }
+    #themeToggle:hover{background:var(--green)}
     body.dark #themeToggle{background:#333;color:#ffc107}
 
     /* ---------- HERO ---------- */
@@ -102,8 +120,8 @@
 </head>
 <body>
   <header>
-    <h1 style="margin:0;font-size:2.5rem">Somali Region Health ERP</h1>
-    <p style="margin-top:10px;font-size:1.2rem">Track and visualize Measles SIA Vaccines and Related Supply Breakdown easily</p>
+    <h1 style="margin:0;font-size:2.5rem">Somali Region Health Bureau</h1>
+    <p style="margin-top:10px;font-size:1.2rem">Track and visualize measles campaign supplies easily</p>
   </header>
   <nav>
     <a href="#home">Home</a>
@@ -114,7 +132,7 @@
   </nav>
 
   <section id="home">
-    <h2 style="font-size:2.8rem;margin-bottom:20px">Welcome to Somali Region Health ERP</h2>
+    <h2 style="font-size:2.8rem;margin-bottom:20px">Welcome to SRHB </h2>
     <p style="font-size:1.2rem;max-width:800px;margin:auto">Upload campaign Excel data to get instant charts, tables, and an interactive choropleth map.</p>
     <a href="#importSection" style="display:inline-block;margin-top:30px;padding:14px 28px;font-size:1.1rem;color:#28a745;background:#fff;border-radius:8px;text-decoration:none;font-weight:bold">Get Started</a>
   </section>
@@ -195,7 +213,18 @@
     }
 
     /* Map init & layers */
-    function initMap(){map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light-v11',center:[45.5,7.5],zoom:6});map.on('load',()=>{loadGeoJSON();});}
+    function initMap(){
+      // Ethiopia bounds (approximate)
+      const ethiopiaBounds = [ [32.9, 3.3], [48.0, 15.1] ];
+      map=new mapboxgl.Map({
+        container:'map',
+        style:'mapbox://styles/mapbox/streets-v11',
+        center:[45.5,7.5],
+        zoom:6,
+        maxBounds: ethiopiaBounds
+      });
+      map.on('load',()=>{loadGeoJSON();});
+    }
     function loadGeoJSON(){
       // Read inline GeoJSON from the <script id="somali-geojson"> tag
       const dataJSON = document.getElementById('somali-geojson').textContent.trim();
@@ -207,8 +236,85 @@
       addFillLayer();
       createLegendDiv();
       updateMapData();
+      // Fit map to Somali state bounds
+      const bounds = new mapboxgl.LngLatBounds();
+      data.features.forEach(f => {
+        // Flatten all coordinates for all polygons/multipolygons
+        const coords = (f.geometry.type === 'Polygon') ? f.geometry.coordinates[0] : [].concat(...f.geometry.coordinates.map(ring => ring[0]));
+        coords.forEach(c => bounds.extend(c));
+      });
+      map.fitBounds(bounds, {padding: 30, maxZoom: 8});
+      // Prevent zooming out beyond Ethiopia
+      map.on('moveend', function() {
+        const currentZoom = map.getZoom();
+        const currentBounds = map.getBounds();
+        // If zoomed out too far, fit to Ethiopia
+        if(currentZoom < 5.2) {
+          map.fitBounds(ethiopiaBounds, {padding: 20, maxZoom: 5.2});
+        } else {
+          // If out of Somali bounds, re-fit to Somali
+          if(!bounds.contains(currentBounds.getNorthEast()) || !bounds.contains(currentBounds.getSouthWest())) {
+            map.fitBounds(bounds, {padding: 30, maxZoom: 8});
+          }
+        }
+      });
     }
-    function addFillLayer(){if(map.getLayer('woreda'))map.removeLayer('woreda');if(map.getLayer('outline'))map.removeLayer('outline');map.addLayer({id:'woreda',type:'fill',source:'somali',paint:{'fill-color':paintExpression(),'fill-opacity':0.7}});map.addLayer({id:'outline',type:'line',source:'somali',paint:{'line-color':'#555','line-width':1}});attachPopup('woreda');}
+    function addFillLayer(){
+      if(map.getLayer('woreda'))map.removeLayer('woreda');
+      if(map.getLayer('outline'))map.removeLayer('outline');
+      if(map.getLayer('zone-labels')) map.removeLayer('zone-labels');
+      if(map.getSource('zone-labels')) map.removeSource('zone-labels');
+      map.addLayer({id:'woreda',type:'fill',source:'somali',paint:{'fill-color':paintExpression(),'fill-opacity':0.7}});
+      map.addLayer({id:'outline',type:'line',source:'somali',paint:{'line-color':'#555','line-width':1}});
+      // Add pins for each Woreda
+      const geo = map.getSource('somali')._data;
+      geo.features.forEach(f => {
+        const coords = getPolygonCentroid(f.geometry.coordinates[0]);
+        new mapboxgl.Marker({color:'#218838'})
+          .setLngLat(coords)
+          .setPopup(new mapboxgl.Popup({offset:25}).setText(`${f.properties.NAME_3} (${f.properties.NAME_2})`))
+          .addTo(map);
+      });
+      // Add Zone labels (one per zone, at centroid of first feature for each zone)
+      const zoneCentroids = {};
+      geo.features.forEach(f => {
+        const zone = f.properties.NAME_2;
+        if (!zoneCentroids[zone]) {
+          const coords = getPolygonCentroid(f.geometry.coordinates[0]);
+          zoneCentroids[zone] = {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: coords },
+            properties: { NAME_2: zone }
+          };
+        }
+      });
+      const zoneGeoJSON = { type: 'FeatureCollection', features: Object.values(zoneCentroids) };
+      map.addSource('zone-labels', { type: 'geojson', data: zoneGeoJSON });
+      map.addLayer({
+        id: 'zone-labels',
+        type: 'symbol',
+        source: 'zone-labels',
+        layout: {
+          'text-field': ['get', 'NAME_2'],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': 15,
+          'text-offset': [0, 1.2],
+          'text-anchor': 'top'
+        },
+        paint: {
+          'text-color': '#e15759',
+          'text-halo-color': '#fff',
+          'text-halo-width': 2
+        }
+      });
+      attachPopup('woreda');
+    }
+    // Helper to get centroid of a polygon (simple average, works for convex polygons)
+    function getPolygonCentroid(coords) {
+      let x = 0, y = 0, n = coords.length;
+      coords.forEach(c => { x += c[0]; y += c[1]; });
+      return [x/n, y/n];
+    }
     function createLegendDiv(){legend=document.createElement('div');legend.className='legend';map.getContainer().appendChild(legend);updateLegend();}
     function updateMapData(){
       if(!map.getSource('somali')||!filtered.length) return;
@@ -228,7 +334,20 @@
 
     /* Excel */
     function processExcel(json){
-      filtered=json.filter(r=>(r['Region']||'').toLowerCase().includes('somali')).map(r=>{const o={};expected.forEach(k=>o[k]=r[k]||'');return o;});
+      const geo = map.getSource('somali') ? map.getSource('somali')._data : null;
+      let validZones = [], validWoredas = [];
+      if (geo) {
+        validZones = [...new Set(geo.features.map(f => f.properties.NAME_2))];
+        validWoredas = [...new Set(geo.features.map(f => f.properties.NAME_3))];
+      }
+
+      filtered = json.filter(r=>(r['Region']||'').toLowerCase().includes('somali')).map(r=>{
+        const o={};
+        expected.forEach(k=>{
+          o[k] = (typeof r[k] !== 'undefined') ? r[k] : '';
+        });
+        return o;
+      });
       if(!filtered.length){banner('No Somali rows found','error');return;}
       const miss=expected.filter(k=>!(k in filtered[0]));
       if(miss.length){banner('Missing cols: '+miss.join(', '),'error');return;}
@@ -241,17 +360,69 @@
       }
     }
 
+    /* Helper: Simple Levenshtein distance */
+    function levenshtein(a, b) {
+      const an = a ? a.length : 0;
+      const bn = b ? b.length : 0;
+      if (an === 0) return bn;
+      if (bn === 0) return an;
+      const matrix = [];
+      for (let i = 0; i <= bn; ++i) matrix[i] = [i];
+      for (let j = 0; j <= an; ++j) matrix[0][j] = j;
+      for (let i = 1; i <= bn; ++i) {
+        for (let j = 1; j <= an; ++j) {
+          if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j - 1] + 1,
+              Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+            );
+          }
+        }
+      }
+      return matrix[bn][an];
+    }
+
+    /* Helper: Find closest match in array */
+    function findClosest(name, arr) {
+      let minDist = Infinity, best = name;
+      arr.forEach(candidate => {
+        const dist = levenshtein(name.toLowerCase().trim(), candidate.toLowerCase().trim());
+        if (dist < minDist) { minDist = dist; best = candidate; }
+      });
+      /* Only autocorrect if the match is reasonably close */
+      return minDist <= 3 ? best : name;
+    }
+
     /* Theme toggle */
     $('#themeToggle').on('click',()=>{document.body.classList.toggle('dark');updateLegend();const style=document.body.classList.contains('dark')?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/light-v11';map.setStyle(style);map.once('styledata',()=>{loadGeoJSON();});});
 
     /* Buttons & inputs */
     $('#btnImport').on('click',()=>$('#importExcel').click());
     $('#btnDownload').on('click',()=>{if(!filtered.length)return banner('Upload first','error');const ws=XLSX.utils.json_to_sheet(filtered);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Somali');XLSX.writeFile(wb,'somali_region_filtered.xlsx');});
-    $('#importExcel').on('change',e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);processExcel(json);};reader.readAsArrayBuffer(f);});
+    $('#importExcel').on('change',e=>{
+      const f=e.target.files[0];
+      if(!f) return;
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        // Use the first row as headers, fill missing with ''
+        const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, {defval: ''});
+        // Remove any row where all values are empty (sometimes trailing blank rows)
+        const cleanJson = json.filter(row => Object.values(row).some(v => v && v.toString().trim() !== ''));
+        processExcel(cleanJson);
+      };
+      reader.readAsArrayBuffer(f);
+    });
     $('#mapSupply').on('change',function(){
       currentSupply=this.value;
       updateLegend();
       updateMapData();
+      if(map && map.getLayer('woreda')) {
+        map.setPaintProperty('woreda','fill-color',paintExpression());
+      }
     });
 
     /* Init */
