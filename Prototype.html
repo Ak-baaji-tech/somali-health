@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Somali Region Health ERP</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+    .container { max-width: 1200px; background: white; padding: 30px; margin: auto; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+    h2, h3 { text-align: center; }
+    button { margin: 10px 5px; padding: 10px 16px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; }
+    button:hover { background-color: #218838; }
+    #importExcel { display: none; }
+    table.dataTable { margin-top: 30px !important; width: 100% !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Somali Region Measles Campaign Dashboard</h2>
+    <div style="text-align:center">
+      <button onclick="document.getElementById('importExcel').click()">Import Excel</button>
+      <button onclick="downloadFilteredExcel()">Download Somali Region Data</button>
+      <input type="file" id="importExcel" accept=".xlsx" />
+    </div>
+
+    <canvas id="supplyChart"></canvas>
+    <div style="margin-top: 40px;">
+      <table id="dataTable" class="display nowrap" style="width:100%"></table>
+    </div>
+  </div>
+
+  <script>
+    const chartCtx = document.getElementById('supplyChart').getContext('2d');
+
+    const expectedKeys = [
+      'Region', 'Zone', 'Woreda',
+      'Measles Dose', '# AD Syringe (0.5 ml)',
+      'Mixing  Syringe (5 ml)', 'Safety Box'
+    ];
+
+    let filteredData = [], chartInstance, dataTableInstance;
+
+    const supplyKeys = {
+      measles: 'Measles Dose',
+      syringe: '# AD Syringe (0.5 ml)',
+      mixing: 'Mixing  Syringe (5 ml)',
+      safety: 'Safety Box'
+    };
+
+    function updateChart() {
+      const labels = [...new Set(filteredData.map(r => r['Woreda']))];
+      const colors = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2'];
+      const datasets = Object.entries(supplyKeys).map(([key, label], i) => {
+        const data = labels.map(woreda => {
+          const row = filteredData.find(r => r['Woreda'] === woreda);
+          return row ? parseInt(row[label] || 0) : 0;
+        });
+        return {
+          label,
+          data,
+          backgroundColor: colors[i % colors.length]
+        };
+      });
+      renderChart(labels, datasets);
+    }
+
+    function renderChart(labels, datasets) {
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(chartCtx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            title: { display: true, text: 'Somali Region Supplies by Woreda' }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { beginAtZero: true, stacked: true }
+          }
+        }
+      });
+    }
+
+    function renderDataTable() {
+      if (dataTableInstance) dataTableInstance.destroy();
+      const columns = expectedKeys.map(key => ({ title: key, data: key }));
+      $('#dataTable').empty();
+      dataTableInstance = $('#dataTable').DataTable({
+        data: filteredData,
+        columns,
+        pageLength: 10,
+        responsive: true,
+        dom: 'Bfrtip',
+        buttons: ['copy', 'csv', 'excel', 'print']
+      });
+    }
+
+    function downloadFilteredExcel() {
+      if (!filteredData.length) return alert('Upload a file first.');
+      const ws = XLSX.utils.json_to_sheet(filteredData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Somali Region');
+      XLSX.writeFile(wb, 'somali_region_filtered.xlsx');
+    }
+
+    document.getElementById('importExcel').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(worksheet);
+        console.log("Detected columns from Excel:", Object.keys(json[0] || {}));
+        filteredData = json.filter(r => (r['Region'] || '').toLowerCase().includes('somali')).map(row => {
+          const filledRow = {};
+          expectedKeys.forEach(k => {
+            filledRow[k] = row.hasOwnProperty(k) ? row[k] : '';
+          });
+          return filledRow;
+        });
+        updateChart();
+        renderDataTable();
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  </script>
+</body>
+</html>
